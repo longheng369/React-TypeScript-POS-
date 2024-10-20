@@ -49,7 +49,7 @@ const ListPurchase: React.FC = () => {
       // keepPreviousData: true, // Keep the data from the previous page while fetching the new page
    });
 
-   console.log(data);
+   // console.log(data);
    //   return;
 
    function convertToReadableFormat(input: string) {
