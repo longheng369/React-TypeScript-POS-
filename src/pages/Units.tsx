@@ -103,12 +103,13 @@ const Units: React.FC = () => {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
+      width: 500,
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      width: 150,
+      width: 500,
       render: (status: number) =>
         status === 1 ? (
           <div className="text-white bg-green-500 p-2 rounded-md inline font-[500]">Active</div>

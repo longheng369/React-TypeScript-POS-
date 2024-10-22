@@ -27,6 +27,7 @@ interface Item {
    name?: string;
    code?: string;
    unit_price?: number;
+   unit_name?: string;
    discount: number;
    subtotal: number;
 }
@@ -75,6 +76,7 @@ const vibrationAnimation = {
 const AddPurchase: React.FC = () => {
    const { settings, isLoading: isLoadingSettings } = useSettings();
    const { products, isLoading: isLoadingProducts } = useProducts();
+   console.log(products);
 
    const [formData, setFormData] = useState<Purchase>(initialFormData);
    const [inputValue, setInputValue] = useState<string>("");
@@ -123,6 +125,7 @@ const AddPurchase: React.FC = () => {
             name: product.name,
             code: product.code,
             unit_price: product.costing_price,
+            unit_name: product.unit.name,
             discount: 0,
             subtotal: product.costing_price,
          };
@@ -273,7 +276,7 @@ const AddPurchase: React.FC = () => {
       setIsLoading(true);
 
       try {
-        await addPurchase(dataToSubmit); // Await the result
+         await addPurchase(dataToSubmit); // Await the result
          // console.log("Purchase submitted successfully", result);
 
          // Display success message
@@ -281,7 +284,7 @@ const AddPurchase: React.FC = () => {
 
          setIsLoading(false);
          // navigate("/purchases"); // Redirect or perform another action on success
-         setFormData(initialFormData)
+         setFormData(initialFormData);
       } catch (error) {
          console.error("Failed to submit purchase", error);
 
@@ -298,13 +301,35 @@ const AddPurchase: React.FC = () => {
          dataIndex: "name",
          key: "name",
          width: 350,
+         render: (_: any, record: any) => {
+            return (
+               <div>
+                  {record.name} - ( {record.code} )
+               </div>
+            );
+         },
+      },
+      {
+         title: "Unit Name",
+         dataIndex: "unit_name",
+         key: "unit_name",
+         width: 200,
+         render: (_: any, record: any) => {
+            return (
+               <div className="w-full">
+                  <Select className="w-full">
+                     <Option key={1} value="1">1</Option>
+                  </Select>
+               </div>
+            );
+         },
       },
       {
          title: <div>Unit Price ( $ )</div>,
          dataIndex: "unit_price",
          key: "unit_price",
          width: 150,
-         render: (_:any, record: Item) => `${record.unit_price}$`,
+         render: (_: any, record: Item) => `${record.unit_price}$`,
       },
       {
          title: <div className="text-center">Quantity ( Unit )</div>,
@@ -434,7 +459,11 @@ const AddPurchase: React.FC = () => {
                </label>
                <motion.div animate={errorSupplier ? vibrationAnimation : {}}>
                   <Select
-                     value={formData.supplier_id === 0 ? undefined : formData.supplier_id}
+                     value={
+                        formData.supplier_id === 0
+                           ? undefined
+                           : formData.supplier_id
+                     }
                      className={`mt-1 ${
                         errorSupplier &&
                         "rounded-[0.4rem] shadow-[0_0_5px_rgba(255,0,0,0.8)]"

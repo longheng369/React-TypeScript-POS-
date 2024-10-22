@@ -13,16 +13,23 @@ interface FormData {
    unit_id: number;
    costing_price: number;
    selling_price: number;
+   alert_quantity: number;
+   status: boolean;
    image: string;
    category_id: number;
    supplier_id: number;
    warehouse_id: number;
-   brand: string;
-   sale_unit_id: string;
-   purchase_unit_id: string;
+   brand_id: number;
    promotion: boolean;
-   promotionPrice: number;
+   promotion_price: number;
+   start_date: string;
+   end_date: string;
+   details: string;
+   discount: number;
+   expiration_date: string;
 }
+
+
 interface Unit {
    id: number;
    name: string;
@@ -35,22 +42,25 @@ const Add: React.FC = () => {
    // console.log(settings?.units);
    const [formData, setFormData] = useState<FormData>({
       type: "Standard",
-      productCode: "",
-      productName: "",
-      unit: 0,
-      costingPrice: 0,
-      sellingPrice: 0,
-      productImage: "",
-      alertQuantity: 0,
-      categoryId: "Select Category",
-      // subCategory_id: "Select Subcategory",
-      barCode: "code128",
-      brand: "Select Brand",
-      promotionStartDate: null,
-      promotionEndDate: null,
-      isPromotion: false,
-      promotionPrice: 0,
-      warehouseId: 0,
+      code: "",
+      name: "",
+      unit_id: 0,
+      costing_price: 0,
+      selling_price: 0,
+      image: "",
+      alert_quantity: 0,
+      category_id: 0,
+      brand_id: 0,
+      start_date: "",
+      end_date: "",
+      promotion: false,
+      promotion_price: 0,
+      warehouse_id: 0,
+      details: '',
+      expiration_date: "",
+      discount: 0,
+      supplier_id: 0,
+      status: true
    });
 
 
@@ -90,7 +100,7 @@ const Add: React.FC = () => {
    };
 
    const handlePromotionCheckBox = () => {
-      setFormData((prev) => ({ ...prev, isPromotion: !prev.isPromotion }));
+      setFormData((prev) => ({ ...prev, promotion: !prev.promotion }));
    };
 
    const handleDateChange: RangePickerProps["onChange"] = (dates) => {
@@ -105,7 +115,7 @@ const Add: React.FC = () => {
       const randomCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
       const timestampPart = (Date.now() % 10000).toString().padStart(3, '0');
       const generatedCode = `P-${randomCode}${timestampPart}`;
-      setFormData((prev) => ({ ...prev, productCode: generatedCode }));
+      setFormData((prev) => ({ ...prev, code: generatedCode }));
    };
 
    const handleSubmit = () => {
@@ -182,7 +192,7 @@ const Add: React.FC = () => {
 
                <label htmlFor="product_type">Product Type *</label>
                <Select
-                  defaultValue={formData.productType}
+                  defaultValue={formData.type}
                   onChange={(value) => handleSelectChange("productType", value)}
                   className="rounded-md custom-select"
                   suffixIcon={<MdOutlineKeyboardArrowDown className="text-xl text-gray-400 hover:text-blue-500"/>}
@@ -202,10 +212,11 @@ const Add: React.FC = () => {
                   type="text"
                   id="product_name"
                   name="productName"
-                  value={formData.productName}
+                  value={formData.name}
                   onChange={handleInputChange}
+                  placeholder="Product name"
                   className={`border rounded-md outline-blue-400 px-3 py-[0.37rem] ${
-                     formData.productName && formData.productName.length > 2
+                     formData.name && formData.name.length > 2
                         ? "border-green-500"
                         : "border-gray-300"
                   }`}
@@ -217,11 +228,12 @@ const Add: React.FC = () => {
                      type="text"
                      id="product_code"
                      name="productCode"
-                     value={formData.productCode}
+                     value={formData.code}
                      onChange={handleInputChange}
+                     placeholder="Product Code"
                      style={{ borderRadius: "0.375rem 0 0 0.375rem" }}
                      className={`border rounded-md outline-blue-400 px-3 py-[0.4rem] flex-1 ${
-                        formData.productCode ? "border-green-500" : "border-gray-300"
+                        formData.code ? "border-green-500" : "border-gray-300"
                      }`}
                   />
                   <button
@@ -254,11 +266,11 @@ const Add: React.FC = () => {
                   type="number"
                   id="costing_price"
                   name="costingPrice"
-                  value={formData.costingPrice <= 0 ? '' : formData.costingPrice}
+                  value={formData.costing_price <= 0 ? '' : formData.costing_price}
                   placeholder="0.00"
                   onChange={handleInputChange}
                   className={`border rounded-md outline-blue-400 px-3 py-[0.37rem] ${
-                     formData.costingPrice && formData.costingPrice !== 0
+                     formData.costing_price && formData.costing_price !== 0
                         ? "border-green-500"
                         : "border-gray-300"
                   }`}
@@ -269,11 +281,11 @@ const Add: React.FC = () => {
                   type="number"
                   id="selling_price"
                   name="sellingPrice"
-                  value={formData.sellingPrice <= 0 ? '' : formData.sellingPrice}
+                  value={formData.selling_price <= 0 ? '' : formData.selling_price}
                   placeholder="0.00"
                   onChange={handleInputChange}
                   className={`border rounded-md outline-blue-400 px-3 py-[0.37rem] ${
-                     formData.sellingPrice && formData.sellingPrice !== 0
+                     formData.selling_price && formData.selling_price !== 0
                         ? "border-green-500"
                         : "border-gray-300"
                   }`}
@@ -290,7 +302,7 @@ const Add: React.FC = () => {
                         className="absolute inset-0 opacity-0 cursor-pointer"
                      />
                      <div className="border rounded-md rounded-tr-none rounded-br-none outline-blue-400 px-3 py-[0.5rem] flex-1 border-gray-300">
-                        {formData.productImage || "Choose a file"}
+                        {formData.image || "Choose a file"}
                      </div>
                   </div>
                   <label
@@ -348,17 +360,17 @@ const Add: React.FC = () => {
                   <label>Promotion</label>
                </div>
 
-               {formData.isPromotion && (
+               {formData.promotion && (
                   <>
                      <label>Promotion Price *</label>
                      <Input
                         type="number"
                         name="promotionPrice"
-                        value={formData.promotionPrice <= 0 ? "" : formData.promotionPrice}
+                        value={formData.promotion_price <= 0 ? "" : formData.promotion}
                         placeholder="0.00"
                         onChange={handleInputChange}
                         className={`border rounded-md outline-blue-400 px-3 py-[0.37rem] ${
-                           formData.promotionPrice && formData.promotionPrice !== 0
+                           formData.promotion_price && formData.promotion_price !== 0
                               ? "border-green-500"
                               : "border-gray-300"
                         }`}
