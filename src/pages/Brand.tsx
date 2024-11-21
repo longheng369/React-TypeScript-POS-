@@ -190,11 +190,11 @@ const Brand: React.FC = () => {
       key: 'action',
       render: (_: any, record: { id: number }) => (
         <>
-          <button className="border border-blue-500 text-blue-500 px-2 py-1 rounded-md" onClick={() => showModal(record)}>
+          <button className="border border-blue-500 text-white bg-blue-500 px-3 py-1 rounded-md" onClick={() => showModal(record)}>
             Edit
           </button>
           <Popconfirm title="Are you sure to delete this brand?" onConfirm={() => deleteBrand(record.id)} okText="Yes" cancelText="No">
-            <button className="border border-red-500 text-red-500 px-2 py-1 rounded-md ml-1">Delete</button>
+            <button className="border border-red-500 text-white bg-red-500 px-2 py-1 rounded-md ml-1">Delete</button>
           </Popconfirm>
         </>
       ),

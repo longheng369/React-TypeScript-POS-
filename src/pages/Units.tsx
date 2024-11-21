@@ -139,7 +139,7 @@ const Units: React.FC = () => {
       render: (_: any, record: { id: number }) => (
         <>
           <button
-            className="border border-blue-500 text-blue-500 px-2 py-1 rounded-md"
+            className="border border-blue-600 text-white bg-blue-500 px-3 py-1 rounded-md"
             onClick={() => showModal(record)}
           >
             Edit
@@ -150,7 +150,7 @@ const Units: React.FC = () => {
             okText="Yes"
             cancelText="No"
           >
-            <button className="border border-red-500 text-red-500 px-2 py-1 rounded-md ml-1">
+            <button className="border border-red-600 text-white bg-red-500 px-2 py-1 rounded-md ml-1">
               Delete
             </button>
           </Popconfirm>

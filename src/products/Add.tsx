@@ -4,10 +4,12 @@ import {
    Input,
    Select,
    Button,
+   message,
 } from "antd";
 import { MdOutlineKeyboardArrowDown } from "react-icons/md";
 import TextArea from "antd/es/input/TextArea";
 import { useSettings } from "../context/SettingsContext";
+import axios from "axios";
 const { Option } = Select;
 
 interface FormData {
@@ -21,15 +23,15 @@ interface FormData {
   status: boolean;
   image: File | null;
   category_id: number;
-  supplier_id: number;
-  warehouse_id: number;
-  brand_id: number;
+  supplier_id: number | null;
+  warehouse_id: number | null;
+  brand_id: number | null;
   promotion: boolean;
   promotion_price: number;
   start_date: string;
   end_date: string;
   details: string;
-  discount: number;
+  discount: number | null;
   expiration_date: string;
   tax_rate: number;
   conversion_factor: number;
@@ -55,15 +57,15 @@ const initialFormValues: FormData = {
   status: true,
   image: null,
   category_id: 0,
-  supplier_id: 0,
-  warehouse_id: 0,
-  brand_id: 0,
+  supplier_id: null,
+  warehouse_id: null,
+  brand_id: null,
   promotion: false,
   promotion_price: 0,
   start_date: "",
   end_date: "",
   details: "",
-  discount: 0,
+  discount: null,
   expiration_date: "",
   tax_rate: 0,
   conversion_factor: 0,
@@ -163,8 +165,16 @@ const Add: React.FC = () => {
     });
   };
 
-  const handleSubmit = () => {
-    console.log(formData);
+  const handleSubmit = async () => {
+    try {
+      const {data} = await axios.post(`${import.meta.env.VITE_URL}/products`, formData);
+      message.success("Product added successful!");
+    } catch (error) {
+      message.error("Something went wrong!")
+      console.log(error);
+    }
+
+    console.log(formData)
   };
 
   return (
