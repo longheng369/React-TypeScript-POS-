@@ -318,7 +318,7 @@ const AddPurchase: React.FC = () => {
             return (
                <div className="w-full">
                   <Select className="w-full">
-                     <Option key={1} value="1">1</Option>
+                     <Option key={1} value="1">{record.unit_name}</Option>
                   </Select>
                </div>
             );

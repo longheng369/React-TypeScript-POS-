@@ -190,13 +190,13 @@ const CategoriesList: React.FC = () => {
       updated_at: item.updated_at,
    }));
 
-   if (isLoading)
-      return (
-         <div className="p-8 border border-gray-300 rounded-lg bg-white">
-            <h1 className="font-[500] text-lg mb-4">Categories List</h1>
-            <Skeleton active />
-         </div>
-      );
+   // if (isLoading)
+   //    return (
+   //       <div className="p-8 border border-gray-300 rounded-lg bg-white">
+   //          <h1 className="font-[500] text-lg mb-4">Categories List</h1>
+   //          <Skeleton active />
+   //       </div>
+   //    );
    if (error) return <p>Error: {(error as Error).message}</p>;
 
    return (
@@ -209,6 +209,7 @@ const CategoriesList: React.FC = () => {
             Add New Category
          </Button>
          <Table
+            loading={isLoading}
             columns={columns}
             dataSource={formattedData}
             className="border rounded-t-lg"

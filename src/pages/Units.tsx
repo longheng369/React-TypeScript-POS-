@@ -20,7 +20,8 @@ const Units: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState(false); // To determine if we are editing
   const [selectedCategory, setSelectedCategory] = useState<any>(null); // Store the selected category
   const [name, setName] = useState('');
-  const [status, setStatus] = useState(1);
+  const [status, setStatus] = useState<number>(1);
+  const [base_unit, setBaseUnit] = useState<number>(0);
   const [nameError, setNameError] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false); // For form loading state
 
@@ -32,10 +33,12 @@ const Units: React.FC = () => {
       setSelectedCategory(unit); // Set the selected category for editing
       setName(unit.name);
       setStatus(unit.status);
+      setBaseUnit(unit.base_unit)
     } else {
       setIsEditMode(false); // Reset for adding new category
       setName('');
       setStatus(1);
+      setBaseUnit(0);
     }
   };
 
@@ -56,7 +59,7 @@ const Units: React.FC = () => {
 
   // Handle form submission for adding and editing categories
   const handleSubmit = async () => {
-    const unitData = { name, status };
+    const unitData = { name, status, base_unit };
 
     if (!name) {
       setNameError(true);
@@ -118,8 +121,21 @@ const Units: React.FC = () => {
         ),
     },
     {
+      title: 'Base Unit',
+      dataIndex: 'base_unit',
+      key: 'base_unit',
+      width: 300,
+      render: (status: number) =>
+        status === 1 ? (
+          <div className="text-white bg-green-500 p-2 rounded-md inline font-[500]">Yes</div>
+        ) : (
+          ""
+        ),
+    },
+    {
       title: 'Action',
       key: 'action',
+      width: 250,
       render: (_: any, record: { id: number }) => (
         <>
           <button
@@ -149,17 +165,11 @@ const Units: React.FC = () => {
     id: item.id,
     name: item.name,
     status: item.status,
+    base_unit: item.base_unit
   }));
 
   // console.log(formattedData);
   
-  if (isLoading)
-    return (
-      <div className="p-8 border border-gray-300 rounded-lg bg-white">
-        <h1 className="font-[500] text-lg mb-4">Units List</h1>
-        <Skeleton active />
-      </div>
-    );
   if (error) return <p>Error: {(error as Error).message}</p>;
 
   return (
@@ -172,6 +182,7 @@ const Units: React.FC = () => {
         Add New Units
       </Button>
       <Table
+        loading={isLoading}
         columns={columns}
         dataSource={formattedData}
         pagination={{
@@ -205,6 +216,18 @@ const Units: React.FC = () => {
           >
             <Select.Option value={1}>Active</Select.Option>
             <Select.Option value={0}>Inactive</Select.Option>
+          </Select>
+        </div>
+
+        <div className="flex flex-col">
+          <label htmlFor="status">Base Unit</label>
+          <Select
+            value={base_unit}
+            onChange={(value) => setBaseUnit(value)}
+            className="inline-block"
+          >
+            <Select.Option value={1}>Yes</Select.Option>
+            <Select.Option value={0}>No</Select.Option>
           </Select>
         </div>
 

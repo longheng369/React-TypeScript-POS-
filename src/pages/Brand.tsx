@@ -1,9 +1,10 @@
-import { Table, Modal, Input, Button, Select, Popconfirm, Skeleton } from 'antd';
+import { Table, Modal, Input, Button, Select, Popconfirm } from 'antd';
 import { ChangeEvent, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { AiOutlineUpload } from "react-icons/ai";
 import TextArea from 'antd/es/input/TextArea';
+import { LiaTimesSolid } from "react-icons/lia";
 
 
 const fetchBrands = async () => {
@@ -35,6 +36,7 @@ const Brand: React.FC = () => {
   const [search, setSearch] = useState<string>('');
 
   const showModal = (brand?: any) => {
+    console.log(brand)
     setIsModalVisible(true);
     setFileName('');
     if (brand) {
@@ -43,7 +45,7 @@ const Brand: React.FC = () => {
       setName(brand.name);
       setDescription(brand.description);
       setLogo(brand.logo); // Reset file input
-      setWebsite(brand.website);
+      setWebsite(brand.website === "null" ? "" : brand.website);
       setCountry(brand.country);
       setStatus(brand.status);
     } else {
@@ -51,6 +53,8 @@ const Brand: React.FC = () => {
       resetForm();
     }
   };
+
+  
 
   const resetForm = () => {
     setName('');
@@ -153,9 +157,9 @@ const Brand: React.FC = () => {
       dataIndex: 'logo',
       key: 'logo',
       render: (logo: string) => (
-        <div>
+        <div className='bg-white'>
           {logo ? (
-            <img className="w-16 mx-auto" src={`http://localhost:8000/storage/images/${logo}`} alt="" />
+            <img className="w-16 mx-auto" src={`${import.meta.env.VITE_IMAGE_URL}/storage/images/${logo}`} alt="" />
           ) : (
             <div>No Image</div>
           )}
@@ -165,11 +169,11 @@ const Brand: React.FC = () => {
     { title: 'Website', dataIndex: 'website', key: 'website',
       render: (website: string) => (
         <div>
-          {website === 'null' ? "no" : <a target='blank' href={website}>{website}</a>}
+          {website === 'null' ? "" : <a target='blank' href={website}>{website}</a>}
         </div>
       )
      },
-    { title: 'Country', dataIndex: 'country', key: 'country' },
+    { title: 'Country', dataIndex: 'country', key: 'country', render: (_: any, record: any) => (<div>{record.country}</div>) },
     {
       title: 'Status',
       dataIndex: 'status',
@@ -231,7 +235,7 @@ const Brand: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['brands'] });
   };
 
-  if (isLoading) return <Skeleton active />;
+  // if (isLoading) return <Skeleton active />;
   if (error) return <p>Error: {(error as Error).message}</p>;
 
   return (
@@ -240,8 +244,8 @@ const Brand: React.FC = () => {
         <Input onChange={(e : ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)} placeholder='Searching Brand' className='w-4/12'/>
         <Button className=' bg-blue-600 text-white' onClick={() => showModal()}>Add New Brand</Button>
       </div>
-      <Table columns={columns} dataSource={formattedData} className='border border-gray-300 rounded-t-[0.5rem]'/>
-      <Modal title={isEditMode ? 'Edit Brand' : 'Add New Brand'} visible={isModalVisible} onCancel={handleCancel} footer={null} >
+      <Table loading={isLoading} columns={columns} dataSource={formattedData} className='border border-gray-300 rounded-t-[0.5rem]'/>
+      <Modal title={isEditMode ? 'Edit Brand' : 'Add New Brand'} open={isModalVisible} onCancel={handleCancel} footer={null} >
         <label htmlFor="name">Name *</label>
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
         {nameError && !name && <div className="text-red-500">Name field is required</div>}
@@ -276,7 +280,7 @@ const Brand: React.FC = () => {
               logo ? 
               // if have logo in row which selected to edit
               <div className='border border-gray-300 rounded-md'>
-                <button onClick={handleClearFile} className='text-[2rem] float-end inline text-gray-400  transition-all hover:text-gray-500 rounded-md pb-2 px-2 leading-7 m-1 hover:bg-gray-100'>&times;</button>
+                <button onClick={handleClearFile} className='text-[2rem] float-end inline text-gray-400  transition-all hover:text-gray-500 rounded-md pb-2 px-2 leading-7 m-1 hover:bg-gray-100 font-[100]'>&times;</button>
                 <label className='rounded-md' htmlFor="logo">
                   <img className='mx-auto' src={`${import.meta.env.VITE_IMAGE_URL}/storage/images/${logo}`} alt="" />
                 </label>
@@ -293,19 +297,29 @@ const Brand: React.FC = () => {
               // end
             )
           ) : (
-            <label className='border border-gray-300 rounded-md cursor-pointer p-[0.3rem] px-2' htmlFor="logo">
-              {fileName ? (
-                <div className='flex flex-col gap-1'>
-                  {fileName}
-                  <img src={logoUrl} alt="" />
-                </div>
-              ) : (
-                <div className='flex items-center gap-1'>
-                  <AiOutlineUpload className='text-lg' />
-                  <span>Upload Image</span>
-                </div>
-              )}
-            </label>
+            <div className='border border-gray-400 rounded-md bg-white overflow-hidden p-[0.33rem]'>
+              {fileName ? 
+                <div className='flex items-center justify-between pb-1'>
+                  <span>{fileName}</span>
+                  <button onClick={handleClearFile} className='text-xl hover:bg-gray-200 p-2 rounded-md'><LiaTimesSolid/></button>
+                </div> 
+                : 
+                <div></div>
+              }
+              
+              <label className='rounded-md cursor-pointer' htmlFor="logo">
+                {fileName ? (
+                  <div>
+                    <img className='mb-0' src={logoUrl} alt="" />
+                  </div>
+                ) : (
+                  <div className='flex items-center gap-1'>
+                    <AiOutlineUpload className='text-lg' />
+                    <span>Upload Image</span>
+                  </div>
+                )}
+              </label>
+            </div>
           )}
           <input ref={fileInputRef} hidden id="logo" type="file" onChange={handleFileChange} />
         </div>

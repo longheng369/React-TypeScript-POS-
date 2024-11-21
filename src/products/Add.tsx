@@ -1,389 +1,340 @@
-import React, { useEffect, useState } from "react";
-import { Dropdown, Menu, Button, DatePicker, Input, MenuProps, Select } from "antd";
+import React, { useEffect, useReducer } from "react";
+import {
+   DatePicker,
+   Input,
+   Select,
+   Button,
+} from "antd";
 import { MdOutlineKeyboardArrowDown } from "react-icons/md";
-import { RangePickerProps } from "antd/es/date-picker";
 import TextArea from "antd/es/input/TextArea";
 import { useSettings } from "../context/SettingsContext";
-import { Option } from "antd/es/mentions";
+const { Option } = Select;
 
 interface FormData {
-   type: string;
-   name: string;
-   code: string;
-   unit_id: number;
-   costing_price: number;
-   selling_price: number;
-   alert_quantity: number;
-   status: boolean;
-   image: string;
-   category_id: number;
-   supplier_id: number;
-   warehouse_id: number;
-   brand_id: number;
-   promotion: boolean;
-   promotion_price: number;
-   start_date: string;
-   end_date: string;
-   details: string;
-   discount: number;
-   expiration_date: string;
+  type: string;
+  name: string;
+  code: string;
+  base_unit_id: number;
+  costing_price: number;
+  selling_price: number;
+  alert_quantity: number;
+  status: boolean;
+  image: File | null;
+  category_id: number;
+  supplier_id: number;
+  warehouse_id: number;
+  brand_id: number;
+  promotion: boolean;
+  promotion_price: number;
+  start_date: string;
+  end_date: string;
+  details: string;
+  discount: number;
+  expiration_date: string;
+  tax_rate: number;
+  conversion_factor: number;
 }
-
 
 interface Unit {
-   id: number;
-   name: string;
+  id: number;
+  name: string;
 }
+
+type Action = 
+  | { type: "UPDATE_FIELD"; field: keyof FormData; value: any }
+  | { type: "RESET" };
+
+const initialFormValues: FormData = {
+  type: "standard",
+  name: "",
+  code: "",
+  base_unit_id: 0,
+  costing_price: 0,
+  selling_price: 0,
+  alert_quantity: 0,
+  status: true,
+  image: null,
+  category_id: 0,
+  supplier_id: 0,
+  warehouse_id: 0,
+  brand_id: 0,
+  promotion: false,
+  promotion_price: 0,
+  start_date: "",
+  end_date: "",
+  details: "",
+  discount: 0,
+  expiration_date: "",
+  tax_rate: 0,
+  conversion_factor: 0,
+}
+
+const formReducer = (state: FormData, action: Action): FormData => {
+  switch (action.type) {
+    case "UPDATE_FIELD":
+      return {
+        ...state,
+        [action.field]: action.value,
+      };
+    case "RESET":
+      return initialFormValues;
+    default:
+      return state;
+  }
+};
+
 const Add: React.FC = () => {
+  const [formData, formDispatch] = useReducer(formReducer, initialFormValues);
 
-   const {settings, isLoading, refetchSettings } = useSettings();
+  const handleFieldChange = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    let value: any;
+  
+    // Handle file input specifically
+    if (field === "image" && e.target instanceof HTMLInputElement && e.target.files) {
+      value = e.target.files[0] || null;
+    } 
+    // Handle checkbox inputs
+    else if (field === "status" || field === "promotion") {
+      value = (e.target as HTMLInputElement).checked;
+    } 
+    // Handle numeric fields
+    else if (
+      new Set([
+        "base_unit_id", 
+        "category_id", 
+        "supplier_id", 
+        "warehouse_id", 
+        "brand_id", 
+        "promotion_price", 
+        "costing_price", 
+        "selling_price", 
+        "alert_quantity", 
+        "tax_rate", 
+        "discount", 
+        "conversion_factor"
+      ]).has(field)
+    ) {
+      value = parseFloat(e.target.value) || 0;
+    } 
+    // Handle all other fields as strings
+    else {
+      value = e.target.value;
+    }
+  
+    // Dispatch the action
+    formDispatch({
+      type: "UPDATE_FIELD",
+      field,
+      value,
+    });
+  };
+  
 
-   useEffect(()=> {refetchSettings()}, [])
-   // console.log(settings?.units);
-   const [formData, setFormData] = useState<FormData>({
-      type: "Standard",
-      code: "",
-      name: "",
-      unit_id: 0,
-      costing_price: 0,
-      selling_price: 0,
-      image: "",
-      alert_quantity: 0,
-      category_id: 0,
-      brand_id: 0,
-      start_date: "",
-      end_date: "",
-      promotion: false,
-      promotion_price: 0,
-      warehouse_id: 0,
-      details: '',
-      expiration_date: "",
-      discount: 0,
-      supplier_id: 0,
-      status: true
-   });
+  const handleSelectChange = (field: keyof FormData) => (value: any) => {
+    formDispatch({
+      type: "UPDATE_FIELD",
+      field,
+      value,
+    });
+  };
+
+  const handleDateChange = (dates: any, dateStrings: [string, string]) => {
+    formDispatch({ type: "UPDATE_FIELD", field: "start_date", value: dateStrings[0] });
+    formDispatch({ type: "UPDATE_FIELD", field: "end_date", value: dateStrings[1] });
+  };
 
 
-   const [dropdownStates, setDropdownStates] = useState({
-      productType: false,
-      unit: false,
-      category: false,
-      subcategory: false,
-      brand: false,
-   });
+  const { settings, refetchSettings } = useSettings();
 
-   const productTypeOptions = ["Standard", "Service", "Combo"];
-   // const unitOptions : Unit[] = [{id: 1, name: "Case"}, {id: 2, name:"Kg"}, {id:3, name:"g"}, {id: 4, name: "pcs"}];
-   // const unitOptions  = settings?.units;
-   const categoryOptions = ["Select Category", "Fruit", "Drink", "Food"];
-   const subcategoryOptions = ["Select Subcategory", "Fresh", "Coffee", "Pizza"];
-   const brandOptions = ["Select Brand", "Brand 1", "Brand 2", "Brand 3"];
+  useEffect(() => {
+    refetchSettings();
+  }, []);
 
-   const handleDropdownClick = (key: string, value: string) => {
-      setFormData((prev) => ({ ...prev, [key]: value }));
-   };
+  const generateCode = () => {
+    const randomCode = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0");
+    const timestampPart = (Date.now() % 10000).toString().padStart(3, "0");
+    const generatedCode = `P-${randomCode}${timestampPart}`;
+    formDispatch({
+      type: "UPDATE_FIELD",
+      field: "code",
+      value: generatedCode,
+    });
+  };
 
-   const toggleDropdown = (key: string, open: boolean) => {
-      setDropdownStates((prev) => ({ ...prev, [key]: open }));
-   };
+  const handleSubmit = () => {
+    console.log(formData);
+  };
 
-   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      setFormData((prev) => ({ ...prev, [name]: value }));
-   };
+  return (
+    <div id="add_product" className="shadow-sm border rounded-md bg-white p-8">
+      <h1 className="font-bold text-lg pb-4">Add Product</h1>
+      <div className="grid grid-cols-2 gap-8">
+        <div className="flex flex-col gap-2">
+          <label>Product Type *</label>
+          <Select
+            defaultValue={formData.type}
+            onChange={handleSelectChange("type")}
+            className="rounded-md custom-select"
+            suffixIcon={<MdOutlineKeyboardArrowDown className="text-xl text-gray-400 hover:text-blue-500" />}
+          >
+            <Option value="standard">Standard</Option>
+            {/* <Option value="service">Service</Option> */}
+          </Select>
 
-   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-         setFormData((prev) => ({ ...prev, productImage: file.name }));
-      }
-   };
+          <label>Name *</label>
+          <Input
+            type="text"
+            value={formData.name}
+            onChange={handleFieldChange("name")}
+            placeholder="Product name"
+            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+          />
 
-   const handlePromotionCheckBox = () => {
-      setFormData((prev) => ({ ...prev, promotion: !prev.promotion }));
-   };
-
-   const handleDateChange: RangePickerProps["onChange"] = (dates) => {
-      setFormData((prev) => ({
-         ...prev,
-         promotionStartDate: dates?.[0]?.format("YYYY-MM-DD") || null,
-         promotionEndDate: dates?.[1]?.format("YYYY-MM-DD") || null,
-      }));
-   };
-
-   const generateCode = () => {
-      const randomCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-      const timestampPart = (Date.now() % 10000).toString().padStart(3, '0');
-      const generatedCode = `P-${randomCode}${timestampPart}`;
-      setFormData((prev) => ({ ...prev, code: generatedCode }));
-   };
-
-   const handleSubmit = () => {
-      
-      // if (formData.isPromotion) {
-      //    setFormData((prev) => ({...prev, promotionPrice: 0}))
-      // }
-
-      console.log(formData); 
-   };
-
-   const renderDropdown = (
-      key: string,
-      selectedItem: string,
-      options: string[],
-      openKey: keyof typeof dropdownStates,
-      label: string
-   ) => {
-      const isSelected = selectedItem !== options[0]; 
-      const borderColor = isSelected ? "border-green-500" : "border-gray-300";
-   
-      return (
-         <>
-            <label>{label}</label>
-            <Dropdown
-               className={`flex justify-between py-[1.1rem] ${borderColor}`}
-               overlay={
-                  <Menu
-                     onClick={(e) => handleDropdownClick(key, e.key)}
-                     items={options.map((option) => ({
-                        key: option,
-                        label: option,
-                        className: formData[key as keyof FormData] === option ? "selected-item" : "",
-                     }))}
-                  />
-               }
-               trigger={["click"]}
-               open={dropdownStates[openKey]}
-               onOpenChange={(flag) => toggleDropdown(openKey, flag)}
+          <label>Product Code *</label>
+          <div className="flex w-full">
+            <Input
+              type="text"
+              value={formData.code}
+              onChange={handleFieldChange("code")}
+              placeholder="Product Code"
+              style={{ borderRadius: "0.375rem 0 0 0.375rem" }}
+              className="border rounded-md outline-blue-400 px-3 py-[0.4rem] flex-1"
+            />
+            <button
+              type="button"
+              onClick={generateCode}
+              style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
+              className="px-4 py-2 bg-blue-500 rounded-md text-white"
             >
-               <Button>
-                  {selectedItem} <MdOutlineKeyboardArrowDown className="text-lg" />
-               </Button>
-            </Dropdown>
-         </>
-      );
-   };
-   
-   // const menuType = (
-   //    <Menu>
-   //      {productTypeOptions.map((type: string, index) => (
-   //        <Menu.Item key={index} onClick={() => setFormData((prevFormData) => ({...prevFormData, productType: type, }))}>
-   //          {type}
-   //        </Menu.Item>
-   //      ))}
-   //    </Menu>
-   //  );
-   const handleSelectChange = (key: string, value: string) => {
-      setFormData((prev) => ({ ...prev, [key]: value }));
-   };
+              Generate Code
+            </button>
+          </div>
 
-   
+          <label>Base Unit *</label>
+          <Select
+            onChange={handleSelectChange("base_unit_id")}
+            className="rounded-md custom-select"
+            suffixIcon={<MdOutlineKeyboardArrowDown className="text-xl text-gray-400 hover:text-blue-500" />}
+            placeholder="Select Base Unit"
+          >
+            {settings?.units.map((type: Unit) => (
+              <Option key={type.id} value={type.id}>
+                {type.name}
+              </Option>
+            ))}
+          </Select>
 
-   return (
-      <div id="add_product" className="shadow-sm border rounded-md bg-white p-8">
-         <h1 className="font-bold text-lg pb-4">Add Product</h1>
-         <div className="grid grid-cols-2 gap-8">
-            <div className="flex flex-col gap-2">
-            {/* <Dropdown overlay={menuType} trigger={['click']}>
-               <Button className={`flex justify-between py-[1.1rem] border rounded-md ${formData.productType !== "Standard" ? "border-green-500" : "border-gray-300"}`}>
-                  {formData.productType} <MdOutlineKeyboardArrowDown className="text-lg" />
-               </Button>
-            </Dropdown> */}
+          <label>Costing Price *</label>
+          <Input
+            type="number"
+            value={formData.costing_price || ""}
+            onChange={handleFieldChange("costing_price")}
+            placeholder="0.00"
+            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+          />
 
-               <label htmlFor="product_type">Product Type *</label>
-               <Select
-                  defaultValue={formData.type}
-                  onChange={(value) => handleSelectChange("productType", value)}
-                  className="rounded-md custom-select"
-                  suffixIcon={<MdOutlineKeyboardArrowDown className="text-xl text-gray-400 hover:text-blue-500"/>}
-                 
-               >
-                  {productTypeOptions.map((type) => (
-                     <Option key={type} value={type}>
-                        {type}
-                     </Option>
-                  ))}
-               </Select>
+          <label>Selling Price *</label>
+          <Input
+            type="number"
+            value={formData.selling_price || ""}
+            onChange={handleFieldChange("selling_price")}
+            placeholder="0.00"
+            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+          />
 
-           
+          <label>Image (optional)</label>
+          <Input
+            type="file"
+            onChange={handleFieldChange("image")}
+            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+          />
 
-               <label htmlFor="product_name">Name *</label>
-               <Input
-                  type="text"
-                  id="product_name"
-                  name="productName"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Product name"
-                  className={`border rounded-md outline-blue-400 px-3 py-[0.37rem] ${
-                     formData.name && formData.name.length > 2
-                        ? "border-green-500"
-                        : "border-gray-300"
-                  }`}
-               />
+          <label>Alert Quantity</label>
+          <Input
+            type="number"
+            value={formData.alert_quantity || ""}
+            onChange={handleFieldChange("alert_quantity")}
+            placeholder="0"
+            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+          />
+        </div>
 
-               <label htmlFor="product_code">Product Code *</label>
-               <div className="flex w-full">
-                  <Input
-                     type="text"
-                     id="product_code"
-                     name="productCode"
-                     value={formData.code}
-                     onChange={handleInputChange}
-                     placeholder="Product Code"
-                     style={{ borderRadius: "0.375rem 0 0 0.375rem" }}
-                     className={`border rounded-md outline-blue-400 px-3 py-[0.4rem] flex-1 ${
-                        formData.code ? "border-green-500" : "border-gray-300"
-                     }`}
-                  />
-                  <button
-                     type="button"
-                     onClick={generateCode}
-                     style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
-                     className="px-4 py-2 bg-blue-500 rounded-md text-white"
-                  >
-                     Generate Code
-                  </button>
-               </div>
 
-               {/* {renderDropdown("productUnit", formData.productUnit, unitOptions, "unit", "Unit *")} */}
-               <label htmlFor="unit">Unit *</label>
-               <Select
-                  onChange={(value) => handleSelectChange("unit", value)}
-                  className="rounded-md custom-select"
-                  suffixIcon={<MdOutlineKeyboardArrowDown className="text-xl text-gray-400 hover:text-blue-500"/>}
-                  placeholder="Select Unit"
-               >
-                  {settings?.units.map((type: Unit) => (
-                     <Option key={type.id} value={type.id}>
-                        {type.name}
-                     </Option>
-                  ))}
-               </Select>
+        <div className="flex flex-col gap-2">
+          <label>Category *</label>
+          <Select
+            onChange={handleSelectChange("category_id")}
+            className="rounded-md custom-select"
+            suffixIcon={<MdOutlineKeyboardArrowDown className="text-xl text-gray-400 hover:text-blue-500" />}
+            placeholder="Select Category"
+          >
+            {settings?.categories.map((type: Unit) => (
+              <Option key={type.id} value={type.id}>
+                {type.name}
+              </Option>
+            ))}
+          </Select>
 
-               <label htmlFor="costing_price">Costing Price *</label>
-               <Input
-                  type="number"
-                  id="costing_price"
-                  name="costingPrice"
-                  value={formData.costing_price <= 0 ? '' : formData.costing_price}
-                  placeholder="0.00"
-                  onChange={handleInputChange}
-                  className={`border rounded-md outline-blue-400 px-3 py-[0.37rem] ${
-                     formData.costing_price && formData.costing_price !== 0
-                        ? "border-green-500"
-                        : "border-gray-300"
-                  }`}
-               />
+          <label>supplier (optional)</label>
+          <Select
+            onChange={handleSelectChange("supplier_id")}
+            className="rounded-md custom-select"
+            suffixIcon={<MdOutlineKeyboardArrowDown className="text-xl text-gray-400 hover:text-blue-500" />}
+            placeholder="Select Supplier"
+          >
+            <Option key="empty" value={0}>
+              Empty supplier
+            </Option>
+            {settings?.suppliers.map((type: any) => (
+              <Option key={type.id} value={type.id}>
+                {type.name}
+              </Option>
+            ))}
+          </Select>
 
-               <label htmlFor="selling_price">Selling Price *</label>
-               <Input
-                  type="number"
-                  id="selling_price"
-                  name="sellingPrice"
-                  value={formData.selling_price <= 0 ? '' : formData.selling_price}
-                  placeholder="0.00"
-                  onChange={handleInputChange}
-                  className={`border rounded-md outline-blue-400 px-3 py-[0.37rem] ${
-                     formData.selling_price && formData.selling_price !== 0
-                        ? "border-green-500"
-                        : "border-gray-300"
-                  }`}
-               />
+          <label>Product Details</label>
+          <TextArea
+            value={formData.details}
+            onChange={handleFieldChange("details")}
+            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+          />
 
-               <label htmlFor="product_image">Image (optional)</label>
-               <div className="flex w-full">
-                  <div className="relative w-full">
-                     <Input
-                        type="file"
-                        id="product_image"
-                        name="productImage"
-                        onChange={handleFileChange}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                     />
-                     <div className="border rounded-md rounded-tr-none rounded-br-none outline-blue-400 px-3 py-[0.5rem] flex-1 border-gray-300">
-                        {formData.image || "Choose a file"}
-                     </div>
-                  </div>
-                  <label
-                     htmlFor="product_image"
-                     style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
-                     className="flex items-center px-4 py-2 bg-blue-500 rounded-md text-white"
-                  >
-                     Browse
-                  </label>
-               </div>
+          <label>Promotion</label>
+          <Input
+            type="checkbox"
+            checked={formData.promotion}
+            onChange={handleFieldChange("promotion")}
+            className="cursor-pointer w-4"
+          />
 
-               <div>
-                  <button onClick={handleSubmit} className="bg-blue-500 border border-blue-600 p-2 px-4 rounded-md text-white mt-4">
-                     Submit
-                  </button>
-               </div>
-            </div>
+          {formData.promotion && (
+            <>
+              <label>Promotion Price *</label>
+              <Input
+                type="number"
+                value={formData.promotion_price || ""}
+                onChange={handleFieldChange("promotion_price")}
+                placeholder="0.00"
+                className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+              />
 
-            <div className="flex flex-col gap-2">
-               {/* {renderDropdown("categoryId", formData.categoryId.toString(), categoryOptions, "category", "Category *")} */}
-               <label htmlFor="category">Category *</label>
-               <Select
-                  onChange={(value) => handleSelectChange("categoryId", value)}
-                  className="rounded-md custom-select"
-                  suffixIcon={<MdOutlineKeyboardArrowDown className="text-xl text-gray-400 hover:text-blue-500"/>}
-                  placeholder="Select Category"
-               >
-                  {settings?.categories.map((type: Unit) => (
-                     <Option key={type.id} value={type.id}>
-                        {type.name}
-                     </Option>
-                  ))}
-               </Select>
-              
-               {/* {renderDropdown("brand", formData.brand, brandOptions, "brand", "Brand (optional)")} */}
-               <label htmlFor="category">Brand</label>
-               <Select
-                  onChange={(value) => handleSelectChange("brand", value)}
-                  className="rounded-md custom-select"
-                  suffixIcon={<MdOutlineKeyboardArrowDown className="text-xl text-gray-400 hover:text-blue-500"/>}
-                  placeholder="Select Category"
-               >
-                  {settings?.brands.map((type: Unit) => (
-                     <Option key={type.id} value={type.id}>
-                        {type.name}
-                     </Option>
-                  ))}
-               </Select>
-               <div className="flex flex-col gap-2">
-                  <label htmlFor="product_details">Product Details</label>
-                  <TextArea id="product_details" className="border border-gray-300 rounded-md outline-blue-500 p-2 text-md" />
-               </div>
-               <div className="flex gap-1">
-                  <Input onClick={handlePromotionCheckBox} type="checkbox" className="cursor-pointer w-4" />
-                  <label>Promotion</label>
-               </div>
+              <label>Promotion Date *</label>
+              <DatePicker.RangePicker
+                onChange={handleDateChange}
+                className="w-full"
+              />
+            </>
+          )}
 
-               {formData.promotion && (
-                  <>
-                     <label>Promotion Price *</label>
-                     <Input
-                        type="number"
-                        name="promotionPrice"
-                        value={formData.promotion_price <= 0 ? "" : formData.promotion}
-                        placeholder="0.00"
-                        onChange={handleInputChange}
-                        className={`border rounded-md outline-blue-400 px-3 py-[0.37rem] ${
-                           formData.promotion_price && formData.promotion_price !== 0
-                              ? "border-green-500"
-                              : "border-gray-300"
-                        }`}
-                     />
-
-                     <label>Promotion Date *</label>
-                     <DatePicker.RangePicker onChange={handleDateChange} className="w-full" />
-                  </>
-               )}
-            </div>
-         </div>
+          <Button onClick={handleSubmit} className="bg-blue-500 border border-blue-600 p-2 px-4 rounded-md text-white mt-4">
+            Submit
+          </Button>
+        </div>
       </div>
-   );
+    </div>
+  );
 };
 
 export default Add;
