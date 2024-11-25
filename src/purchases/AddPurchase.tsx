@@ -125,7 +125,7 @@ const AddPurchase: React.FC = () => {
             name: product.name,
             code: product.code,
             unit_price: product.costing_price,
-            unit_name: product.unit.name,
+            unit_name: product.base_unit.name,
             discount: 0,
             subtotal: product.costing_price,
          };

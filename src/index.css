@@ -171,7 +171,7 @@ input{
 .custom-select .ant-select-selector {
   padding: 18px 12px !important; /* Adjust padding as needed */
   line-height: 1.5; /* Adjust line-height to vertically center text */
-  /* border-color: red !important; */
+  border: 1px solid rgb(156, 163, 175) !important;
 }
 
 .active-select .ant-select-selector{

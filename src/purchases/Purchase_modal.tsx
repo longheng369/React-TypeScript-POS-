@@ -39,7 +39,7 @@ interface Product {
    end_date: string | null;
    stock: number;
    expiration_date: string | null;
-   unit: Unit;
+   base_unit: Unit;
    created_at: string;
    updated_at: string;
 }
@@ -279,9 +279,9 @@ const PurchaseModal: React.FC<PurchaseModalProps> = (props) => {
                         </td>
                         <td className="border px-4 py-2">
                            ${item.product?.costing_price}{" "}
-                           <span>( {item.product.unit.name} )</span>
+                           {/* <span>( {item.product.base_unit.name} )</span> */}
                         </td>
-                        <td className="border px-4 py-2">{item.quantity}</td>
+                        <td className="border px-4 py-2">{item.quantity}<span>( {item.product.base_unit.name} )</span></td>
                         <td className="border px-4 py-2">%{item.discount}</td>
                         <td className="border px-4 py-2">
                            ${itemSubtotal.toFixed(2)}

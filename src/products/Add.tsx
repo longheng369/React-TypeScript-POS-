@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import {
    DatePicker,
    Input,
@@ -87,6 +87,7 @@ const formReducer = (state: FormData, action: Action): FormData => {
 
 const Add: React.FC = () => {
   const [formData, formDispatch] = useReducer(formReducer, initialFormValues);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleFieldChange = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     let value: any;
@@ -166,16 +167,56 @@ const Add: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    setIsLoading(true);
     try {
-      const {data} = await axios.post(`${import.meta.env.VITE_URL}/products`, formData);
-      message.success("Product added successful!");
-    } catch (error) {
-      message.error("Something went wrong!")
-      console.log(error);
+      // Create FormData object
+      const dataToSubmit = new FormData();
+  
+      // Append fields to FormData
+      Object.entries(formData).forEach(([key, value]) => {
+        // Convert boolean fields to 1 or 0
+        if (key === "status" || key === "promotion") {
+          dataToSubmit.append(key, value ? "1" : "0");
+        } else if (key === "image" && value instanceof File) {
+          // Append image if it exists
+          dataToSubmit.append(key, value);
+        } else if (value !== null && value !== undefined) {
+          // Append other non-null fields
+          dataToSubmit.append(key, value.toString());
+        }
+      });
+  
+      // Send POST request
+      const response = await axios.post(
+        `${import.meta.env.VITE_URL}/products`,
+        dataToSubmit,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+  
+      // Show success message
+      message.success("Product added successfully!");
+      setIsLoading(false);
+      setTimeout(() => {
+        formDispatch({type: "RESET"})
+      }, 200)
+      console.log(response.data);
+    } catch (error: any) {
+      // Show error message
+      message.error("Something went wrong!");
+      setIsLoading(false);
+      // Debugging the error response, 
+      if (error.response?.data?.errors) {
+        console.error("Validation Errors:", error.response.data.errors);
+      } else {
+        console.error(error);
+      }
     }
-
-    console.log(formData)
   };
+  
 
   return (
     <div id="add_product" className="shadow-sm border rounded-md bg-white p-8">
@@ -199,7 +240,7 @@ const Add: React.FC = () => {
             value={formData.name}
             onChange={handleFieldChange("name")}
             placeholder="Product name"
-            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+            className="border border-gray-400 rounded-md outline-blue-400 px-3 py-[0.37rem]"
           />
 
           <label>Product Code *</label>
@@ -210,7 +251,7 @@ const Add: React.FC = () => {
               onChange={handleFieldChange("code")}
               placeholder="Product Code"
               style={{ borderRadius: "0.375rem 0 0 0.375rem" }}
-              className="border rounded-md outline-blue-400 px-3 py-[0.4rem] flex-1"
+              className="border border-gray-400 rounded-md outline-blue-400 px-3 py-[0.4rem] flex-1"
             />
             <button
               type="button"
@@ -242,7 +283,7 @@ const Add: React.FC = () => {
             value={formData.costing_price || ""}
             onChange={handleFieldChange("costing_price")}
             placeholder="0.00"
-            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+            className="border border-gray-400 rounded-md outline-blue-400 px-3 py-[0.37rem]"
           />
 
           <label>Selling Price *</label>
@@ -251,28 +292,29 @@ const Add: React.FC = () => {
             value={formData.selling_price || ""}
             onChange={handleFieldChange("selling_price")}
             placeholder="0.00"
-            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+            className="border border-gray-400 rounded-md outline-blue-400 px-3 py-[0.37rem]"
           />
 
           <label>Image (optional)</label>
           <Input
             type="file"
             onChange={handleFieldChange("image")}
-            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+            className="border border-gray-400 rounded-md outline-blue-400 px-3 py-[0.37rem]"
           />
 
+        </div>
+
+
+        <div className="flex flex-col gap-2">
           <label>Alert Quantity</label>
           <Input
             type="number"
             value={formData.alert_quantity || ""}
             onChange={handleFieldChange("alert_quantity")}
             placeholder="0"
-            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+            className="border border-gray-400 rounded-md outline-blue-400 px-3 py-[0.37rem]"
           />
-        </div>
 
-
-        <div className="flex flex-col gap-2">
           <label>Category *</label>
           <Select
             onChange={handleSelectChange("category_id")}
@@ -287,7 +329,24 @@ const Add: React.FC = () => {
             ))}
           </Select>
 
-          <label>supplier (optional)</label>
+          <label>Brand (optional)</label>
+          <Select
+            onChange={handleSelectChange("brand_id")}
+            className="rounded-md custom-select"
+            suffixIcon={<MdOutlineKeyboardArrowDown className="text-xl text-gray-400 hover:text-blue-500" />}
+            placeholder="Select Brand"
+          >
+            <Option key="empty" value={0}>
+              Empty Brand
+            </Option>
+            {settings?.brands.map((type: any) => (
+              <Option key={type.id} value={type.id}>
+                {type.name}
+              </Option>
+            ))}
+          </Select>
+
+          <label>Supplier (optional)</label>
           <Select
             onChange={handleSelectChange("supplier_id")}
             className="rounded-md custom-select"
@@ -308,16 +367,18 @@ const Add: React.FC = () => {
           <TextArea
             value={formData.details}
             onChange={handleFieldChange("details")}
-            className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+            className="border border-gray-400 rounded-md outline-blue-400 px-3 py-[0.37rem]"
           />
 
           <label>Promotion</label>
-          <Input
-            type="checkbox"
-            checked={formData.promotion}
-            onChange={handleFieldChange("promotion")}
-            className="cursor-pointer w-4"
-          />
+          <div>
+            <input
+              type="checkbox"
+              checked={formData.promotion}
+              onChange={handleFieldChange("promotion")}
+              className="cursor-pointer w-5 h-5"
+            />
+          </div>
 
           {formData.promotion && (
             <>
@@ -327,19 +388,20 @@ const Add: React.FC = () => {
                 value={formData.promotion_price || ""}
                 onChange={handleFieldChange("promotion_price")}
                 placeholder="0.00"
-                className="border rounded-md outline-blue-400 px-3 py-[0.37rem]"
+                className="border border-gray-400 rounded-md outline-blue-400 px-3 py-[0.37rem]"
               />
 
               <label>Promotion Date *</label>
               <DatePicker.RangePicker
                 onChange={handleDateChange}
-                className="w-full"
+                className="w-full border-gray-400"
               />
             </>
           )}
 
-          <Button onClick={handleSubmit} className="bg-blue-500 border border-blue-600 p-2 px-4 rounded-md text-white mt-4">
+          <Button onClick={handleSubmit} className={`bg-blue-500 border border-blue-600 p-4  rounded-md text-white mt-4`}>
             Submit
+            {isLoading ? <span className="loading loading-spiner loading-md"></span> : ""}
           </Button>
         </div>
       </div>

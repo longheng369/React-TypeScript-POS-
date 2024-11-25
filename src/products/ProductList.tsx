@@ -31,7 +31,7 @@ const ProductList: React.FC = () => {
     code: item.code,
     name: item.name,
     category: item.category.name,
-    unit: item.unit.name,
+    unit: item.base_unit?.name,
     costing_price: item.costing_price,
     selling_price: item.selling_price,
     stock: item.stock,
@@ -39,7 +39,7 @@ const ProductList: React.FC = () => {
     alert_quantity: item.alert_quantity,
   }));
 
-  console.log(formattedData)
+  console.log(data)
   const handleSelectChange = (selectedKeys: React.Key[]) => {
     setSelectedRowKeys(selectedKeys);
   };
@@ -68,7 +68,7 @@ const ProductList: React.FC = () => {
       key: 'imageUrl',
       width: 70,
       render: (text: string,record: any) => (
-        record.image ? <img src={`http://localhost:8000/storage/images/${record.image}`} alt="Product" style={{ width: 40, height: 40 }} /> : <img src="https://via.placeholder.com/40" alt="Product" style={{ width: 40, height: 40 }} />
+        record.image ? <img src={`${import.meta.env.VITE_IMAGE_URL}/storage/images/${record.image}`} alt="Product" style={{ width: 40, height: 40 }} /> : <img src="https://via.placeholder.com/40" alt="Product" style={{ width: 40, height: 40 }} />
       ),
     },
     { title: 'Code', dataIndex: 'code', key: 'code' },
